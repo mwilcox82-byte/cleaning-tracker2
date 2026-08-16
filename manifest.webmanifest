@@ -1,0 +1,16 @@
+{
+  "name": "Home Cleaning Tracker",
+  "short_name": "Cleaning",
+  "description": "Bi-weekly cleaning schedule tracker with two-cycle rotation and progress tracking.",
+  "start_url": "./cleaning_tracker_v2.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A5751",
+  "theme_color": "#0D9488",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
