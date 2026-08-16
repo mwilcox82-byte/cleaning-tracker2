@@ -1,4 +1,4 @@
-# Cleaning Tracker — app icon
+# Cleaning Tracker — app icon 
 
 ## What to do
 1. Upload these files to the cleaning-tracker2 repo, in the SAME folder as
