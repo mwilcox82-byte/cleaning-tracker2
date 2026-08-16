@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cleaning Tracker</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .card.hover-shadow:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-secondary {
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .badge-outline {
+            background: #fef3c7;
+            color: #a16207;
+            border: 1px solid #fcd34d;
+        }
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: white;
+        }
+        .checkbox:checked {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        .checkbox:checked::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .progress-bar {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        const { useState, useEffect } = React;
+
+        const SCHEDULE = {
+            cycle1: {
+                day1: {
+                    title: "Day 1",
+                    time: "~1.5 hours",
+                    tasks: [
+                        { location: "2nd Floor", name: "Wash bed linens", duration: 20, asNeeded: false },
+                        { location: "2nd Floor", name: "Dust and clean surfaces", duration: 15, asNeeded: false },
+                        { location: "2nd Floor", name: "Sweep/vacuum floor", duration: 15, asNeeded: false },
+                        { location: "2nd Floor", name: "Mop floors", duration: 15, asNeeded: false },
+                        { location: "2nd Floor", name: "Clean windows", duration: 10, asNeeded: false },
+                        { location: "2nd Floor", name: "Organize wardrobe", duration: 10, asNeeded: false },
+                        { location: "2nd Floor", name: "Clean terraces", duration: 15, asNeeded: true },
+                    ]
+                },
+                day2: {
+                    title: "Day 2",
+                    time: "~1.5 hours",
+                    tasks: [
+                        { location: "Stairs & Misc", name: "Vacuum stairs", duration: 10, asNeeded: false },
+                        { location: "Stairs & Misc", name: "Clean stair rails", duration: 5, asNeeded: false },
+                        { location: "Stairs & Misc", name: "Water, fertilize, and prune plants", duration: 15, asNeeded: true },
+                        { location: "Stairs & Misc", name: "Note and plan for any repairs needed", duration: 5, asNeeded: true },
+                        { location: "Stairs & Misc", name: "Replenish cleaning supplies", duration: 10, asNeeded: true },
+                        { location: "1st Floor Office", name: "Organize work desk", duration: 10, asNeeded: false },
+                        { location: "1st Floor Office", name: "Dust and clean surface", duration: 10, asNeeded: false },
+                        { location: "1st Floor Office", name: "Sweep/vacuum floor", duration: 10, asNeeded: false },
+                        { location: "1st Floor Office", name: "Clean window", duration: 8, asNeeded: false },
+                        { location: "1st Floor Office", name: "Mop floor", duration: 10, asNeeded: false },
+                    ]
+                },
+                day3: {
+                    title: "Day 3",
+                    time: "~2 hours",
+                    tasks: [
+                        { location: "1st Floor Bathroom", name: "Clean all surfaces", duration: 15, asNeeded: false },
+                        { location: "1st Floor Bathroom", name: "Replace toilet paper and toilet bowl cleaner", duration: 5, asNeeded: true },
+                        { location: "1st Floor Bathroom", name: "Wash/replace towels", duration: 10, asNeeded: true },
+                        { location: "1st Floor Bathroom", name: "Mop floor", duration: 10, asNeeded: false },
+                        { location: "1st Floor Bathroom", name: "Empty garbage", duration: 3, asNeeded: false },
+                        { location: "1st Floor Bathroom", name: "Clean mirror", duration: 5, asNeeded: false },
+                        { location: "1st Floor Bathroom", name: "Refill air/toilet fresheners", duration: 3, asNeeded: true },
+                        { location: "1st Floor Bathroom", name: "Refill hand soap", duration: 2, asNeeded: true },
+                        { location: "1st Floor Guest Room", name: "Dust and clean surfaces", duration: 10, asNeeded: false },
+                        { location: "1st Floor Guest Room", name: "Clean windows", duration: 8, asNeeded: false },
+                        { location: "1st Floor Guest Room", name: "Sweep/vacuum floor", duration: 10, asNeeded: false },
+                        { location: "1st Floor Guest Room", name: "Mop floor", duration: 10, asNeeded: false },
+                    ]
+                }
+            },
+            cycle2: {
+                day1: {
+                    title: "Day 1",
+                    time: "~2 hours",
+                    tasks: [
+                        { location: "Ground Floor WC", name: "Clean all surfaces", duration: 15, asNeeded: false },
+                        { location: "Ground Floor WC", name: "Replace toilet paper and toilet bowl cleaner", duration: 5, asNeeded: true },
+                        { location: "Ground Floor WC", name: "Wash/replace hand towel", duration: 5, asNeeded: true },
+                        { location: "Ground Floor WC", name: "Mop floor", duration: 10, asNeeded: false },
+                        { location: "Ground Floor WC", name: "Empty garbage", duration: 3, asNeeded: false },
+                        { location: "Ground Floor WC", name: "Clean mirror", duration: 5, asNeeded: false },
+                        { location: "Ground Floor WC", name: "Clean window", duration: 8, asNeeded: false },
+                        { location: "Ground Floor WC", name: "Refill air freshener cannister and batteries", duration: 5, asNeeded: true },
+                        { location: "Ground Floor WC", name: "Refill air/toilet fresheners", duration: 3, asNeeded: true },
+                        { location: "Ground Floor WC", name: "Refill hand soap", duration: 2, asNeeded: true },
+                        { location: "Ground Floor Kitchen", name: "Clean all surfaces", duration: 20, asNeeded: false },
+                        { location: "Ground Floor Kitchen", name: "Load/unload dishwasher", duration: 5, asNeeded: true },
+                        { location: "Ground Floor Kitchen", name: "Clean all appliances", duration: 15, asNeeded: false },
+                        { location: "Ground Floor Kitchen", name: "Sweep/vacuum floor", duration: 10, asNeeded: false },
+                    ]
+                },
+                day2: {
+                    title: "Day 2",
+                    time: "~2 hours",
+                    tasks: [
+                        { location: "Ground Floor Kitchen", name: "Mop floors", duration: 10, asNeeded: false },
+                        { location: "Ground Floor Kitchen", name: "Clean window", duration: 8, asNeeded: false },
+                        { location: "Ground Floor Kitchen", name: "Empty garbage and recycling", duration: 5, asNeeded: true },
+                        { location: "Ground Floor Living/Dining", name: "Clean all surfaces", duration: 15, asNeeded: false },
+                        { location: "Ground Floor Living/Dining", name: "Sweep/vacuum floor", duration: 15, asNeeded: false },
+                        { location: "Ground Floor Living/Dining", name: "Mop floors", duration: 15, asNeeded: false },
+                        { location: "Ground Floor Living/Dining", name: "Wash pillow cushions/carpet", duration: 20, asNeeded: true },
+                        { location: "Ground Floor Living/Dining", name: "Clean couch and chairs", duration: 20, asNeeded: true },
+                        { location: "Ground Floor Living/Dining", name: "Clean windows", duration: 10, asNeeded: false },
+                        { location: "Entrance/Storage", name: "Remove weeds", duration: 10, asNeeded: true },
+                        { location: "Entrance/Storage", name: "Sweep entrance tiles and paved area", duration: 10, asNeeded: false },
+                        { location: "Entrance/Storage", name: "Sweep and mop storage room floor", duration: 15, asNeeded: false },
+                        { location: "Entrance/Storage", name: "Clean appliances (washing machine, dryer)", duration: 20, asNeeded: true },
+                    ]
+                },
+                day3: {
+                    title: "Day 3",
+                    time: "~1 hour",
+                    tasks: [
+                        { location: "Ground Floor Terrace", name: "Sweep tiles", duration: 15, asNeeded: false },
+                        { location: "Ground Floor Terrace", name: "Power wash tiles", duration: 30, asNeeded: true },
+                        { location: "Ground Floor Terrace", name: "Trim plant overgrowth", duration: 15, asNeeded: true },
+                        { location: "Ground Floor Terrace", name: "Clean all surfaces", duration: 10, asNeeded: false },
+                        { location: "Ground Floor Terrace", name: "Clean windows", duration: 10, asNeeded: false },
+                        { location: "Miscellaneous", name: "Clean and organize crawl/storage space", duration: 30, asNeeded: true },
+                        { location: "Miscellaneous", name: "Note any spot cleaning and treatment of wood floors needed", duration: 5, asNeeded: true },
+                    ]
+                }
+            }
+        };
+
+        function App() {
+            const [currentCycle, setCurrentCycle] = useState(1);
+            const [completed, setCompleted] = useState({});
+
+            useEffect(() => {
+                const saved = localStorage.getItem('cleaningTrackerState');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    setCurrentCycle(state.cycle);
+                    setCompleted(state.completed);
+                }
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('cleaningTrackerState', JSON.stringify({
+                    cycle: currentCycle,
+                    completed
+                }));
+            }, [currentCycle, completed]);
+
+            const cycleKey = `cycle${currentCycle}`;
+            const cycle = SCHEDULE[cycleKey];
+
+            let totalTasks = 0;
+            let completedTasks = 0;
+            let totalDuration = 0;
+
+            Object.keys(cycle).forEach(dayKey => {
+                cycle[dayKey].tasks.forEach((task, idx) => {
+                    totalTasks++;
+                    const taskId = `${cycleKey}-${dayKey}-${idx}`;
+                    if (completed[taskId]) {
+                        completedTasks++;
+                    }
+                    totalDuration += task.duration;
+                });
+            });
+
+            const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            const remainingTasks = totalTasks - completedTasks;
+
+            const toggleTask = (taskId) => {
+                setCompleted(prev => ({
+                    ...prev,
+                    [taskId]: !prev[taskId]
+                }));
+            };
+
+            const nextCycle = () => {
+                setCurrentCycle(prev => prev === 1 ? 2 : 1);
+                setCompleted({});
+            };
+
+            const markAllCompleted = () => {
+                const newCompleted = { ...completed };
+                Object.keys(cycle).forEach(dayKey => {
+                    cycle[dayKey].tasks.forEach((task, idx) => {
+                        const taskId = `${cycleKey}-${dayKey}-${idx}`;
+                        newCompleted[taskId] = true;
+                    });
+                });
+                setCompleted(newCompleted);
+            };
+
+            const resetCycle = () => {
+                const newCompleted = { ...completed };
+                Object.keys(cycle).forEach(dayKey => {
+                    cycle[dayKey].tasks.forEach((task, idx) => {
+                        const taskId = `${cycleKey}-${dayKey}-${idx}`;
+                        delete newCompleted[taskId];
+                    });
+                });
+                setCompleted(newCompleted);
+            };
+
+            const exportProgress = () => {
+                let data = `Cleaning Schedule Progress\n`;
+                data += `==========================\n`;
+                data += `Date: ${new Date().toLocaleDateString()}\n`;
+                data += `Cycle: ${currentCycle}\n`;
+                data += `Completed: ${completedTasks}/${totalTasks} tasks (${Math.round(progressPercent)}%)\n\n`;
+
+                Object.keys(cycle).forEach(dayKey => {
+                    const day = cycle[dayKey];
+                    data += `${day.title} (${day.time})\n`;
+                    day.tasks.forEach((task, idx) => {
+                        const taskId = `${cycleKey}-${dayKey}-${idx}`;
+                        const status = completed[taskId] ? '✓' : '○';
+                        data += `  ${status} ${task.name}\n`;
+                    });
+                    data += '\n';
+                });
+
+                const blob = new Blob([data], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cleaning-progress-cycle${currentCycle}-${new Date().toISOString().split('T')[0]}.txt`;
+                a.click();
+            };
+
+            return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4' },
+                React.createElement('div', { className: 'max-w-5xl mx-auto' },
+                    React.createElement('div', { className: 'mb-8' },
+                        React.createElement('h1', { className: 'text-4xl font-bold text-slate-900 mb-2' }, '🧹 Cleaning Tracker'),
+                        React.createElement('p', { className: 'text-slate-600' }, `Cycle ${currentCycle} • Bi-weekly schedule`)
+                    ),
+
+                    React.createElement('div', { className: 'card mb-6' },
+                        React.createElement('div', { className: 'p-6 pb-4' },
+                            React.createElement('div', { className: 'flex items-center justify-between mb-4' },
+                                React.createElement('h2', { className: 'text-lg font-semibold text-slate-900' }, 'Progress'),
+                                React.createElement('button', { 
+                                    onClick: nextCycle,
+                                    className: 'px-4 py-2 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50'
+                                }, `Next Cycle →`)
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('div', { className: 'flex justify-between items-center mb-2' },
+                                    React.createElement('span', { className: 'text-sm font-medium text-slate-700' }, `${completedTasks} of ${totalTasks} tasks completed`),
+                                    React.createElement('span', { className: 'text-sm font-semibold text-slate-900' }, `${Math.round(progressPercent)}%`)
+                                ),
+                                React.createElement('div', { className: 'progress-bar' },
+                                    React.createElement('div', { className: 'progress-fill', style: { width: `${progressPercent}%` } })
+                                )
+                            ),
+                            React.createElement('div', { className: 'grid grid-cols-3 gap-4 pt-4 mt-4 border-t border-slate-200' },
+                                React.createElement('div', null,
+                                    React.createElement('p', { className: 'text-xs text-slate-600' }, 'Completed'),
+                                    React.createElement('p', { className: 'text-2xl font-bold text-green-600' }, completedTasks)
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('p', { className: 'text-xs text-slate-600' }, 'Remaining'),
+                                    React.createElement('p', { className: 'text-2xl font-bold text-amber-600' }, remainingTasks)
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('p', { className: 'text-xs text-slate-600' }, 'Est. Time Left'),
+                                    React.createElement('p', { className: 'text-2xl font-bold text-slate-900' }, `${Math.max(0, remainingTasks * 2)}m`)
+                                )
+                            )
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8' },
+                        Object.entries(cycle).map(([dayKey, day]) =>
+                            React.createElement('div', { key: dayKey, className: 'card overflow-hidden hover-shadow' },
+                                React.createElement('div', { className: 'bg-gradient-to-r from-slate-100 to-slate-50 p-4' },
+                                    React.createElement('div', { className: 'flex items-start justify-between' },
+                                        React.createElement('div', null,
+                                            React.createElement('h3', { className: 'font-semibold text-slate-900' }, day.title),
+                                            React.createElement('p', { className: 'text-sm text-slate-600 mt-1' }, day.time)
+                                        ),
+                                        React.createElement('span', { className: 'badge badge-secondary' },
+                                            `${day.tasks.filter((_, idx) => completed[`${cycleKey}-${dayKey}-${idx}`]).length}/${day.tasks.length}`
+                                        )
+                                    )
+                                ),
+                                React.createElement('div', { className: 'p-4 space-y-3' },
+                                    (() => {
+                                        let lastLocation = '';
+                                        return day.tasks.map((task, idx) => {
+                                            const taskId = `${cycleKey}-${dayKey}-${idx}`;
+                                            const isCompleted = completed[taskId] || false;
+                                            const isNewLocation = task.location !== lastLocation;
+                                            lastLocation = task.location;
+
+                                            return React.createElement('div', { key: idx },
+                                                isNewLocation && React.createElement('p', { className: 'text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 mt-2' }, task.location),
+                                                React.createElement('button', {
+                                                    onClick: () => toggleTask(taskId),
+                                                    className: `w-full flex items-start gap-3 p-2 rounded-md transition-all ${isCompleted ? 'bg-green-50' : 'hover:bg-slate-50'}`
+                                                },
+                                                    React.createElement('input', {
+                                                        type: 'checkbox',
+                                                        checked: isCompleted,
+                                                        readOnly: true,
+                                                        className: 'mt-1 cursor-pointer'
+                                                    }),
+                                                    React.createElement('div', { className: 'flex-1 text-left' },
+                                                        React.createElement('p', { className: `text-sm ${isCompleted ? 'line-through text-slate-400' : 'text-slate-700'}` }, task.name),
+                                                        task.asNeeded && React.createElement('span', { className: 'badge badge-outline mt-1' }, 'as needed')
+                                                    )
+                                                )
+                                            );
+                                        });
+                                    })()
+                                )
+                            )
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'flex flex-wrap gap-3 justify-center mb-8' },
+                        React.createElement('button', { 
+                            onClick: markAllCompleted,
+                            className: 'px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-medium'
+                        }, '✓ Mark All Done'),
+                        React.createElement('button', { 
+                            onClick: exportProgress,
+                            className: 'px-4 py-2 border border-slate-300 text-slate-900 rounded-lg hover:bg-slate-50 font-medium'
+                        }, '📥 Export'),
+                        React.createElement('button', { 
+                            onClick: () => {
+                                if (confirm(`Reset Cycle ${currentCycle}? This cannot be undone.`)) {
+                                    resetCycle();
+                                }
+                            },
+                            className: 'px-4 py-2 border border-slate-300 text-red-600 rounded-lg hover:bg-red-50 font-medium'
+                        }, '🔄 Reset')
+                    ),
+
+                    React.createElement('div', { className: 'card bg-slate-50' },
+                        React.createElement('div', { className: 'p-6' },
+                            React.createElement('h2', { className: 'text-base font-semibold text-slate-900 mb-4' }, 'Cycle Summary'),
+                            React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 text-sm' },
+                                React.createElement('div', null,
+                                    React.createElement('p', { className: 'text-slate-600 text-xs' }, 'Total Tasks'),
+                                    React.createElement('p', { className: 'text-2xl font-bold text-slate-900' }, totalTasks)
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('p', { className: 'text-slate-600 text-xs' }, 'Completed'),
+                                    React.createElement('p', { className: 'text-2xl font-bold text-green-600' }, completedTasks)
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('p', { className: 'text-slate-600 text-xs' }, 'Remaining'),
+                                    React.createElement('p', { className: 'text-2xl font-bold text-amber-600' }, remainingTasks)
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('p', { className: 'text-slate-600 text-xs' }, 'Est. Total Time'),
+                                    React.createElement('p', { className: 'text-2xl font-bold text-slate-900' }, `~${Math.round(totalDuration / 60)}h`)
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
+    </script>
+</body>
+</html>
